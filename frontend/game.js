@@ -11,32 +11,27 @@ let player = { x: 200, y: 200, size: 20, speed: 4 };
 let car = { x: 400, y: 300, size: 40, speed: 7 };
 let inCar = false;
 
-// WORLD OBJECTS
-let bullets = [];
-let npcs = [];
-let traffic = [];
-let policeCars = [];
+// WORLD
+let enemy = { x: 600, y: 200, alive: true };
+let police = { x: 800, y: 300 };
 
 // GAME DATA
 let money = 0;
 let wanted = 0;
+let chapter = 1;
 
-// JOYSTICK (simple touch)
+// CAMERA
+let camera = { x: 0, y: 0 };
+
+// BULLETS
+let bullets = [];
+
+// CONTROLS
 let keys = {};
 document.addEventListener("keydown", e => keys[e.key.toLowerCase()] = true);
 document.addEventListener("keyup", e => keys[e.key.toLowerCase()] = false);
 
-// SPAWN NPCs
-for (let i=0;i<10;i++){
-  npcs.push({x:Math.random()*800,y:Math.random()*400});
-}
-
-// SPAWN TRAFFIC
-for (let i=0;i<5;i++){
-  traffic.push({x:Math.random()*800,y:Math.random()*400});
-}
-
-// MOVE PLAYER / CAR
+// MOVE
 function move() {
   let obj = inCar ? car : player;
   let speed = inCar ? car.speed : player.speed;
@@ -47,31 +42,49 @@ function move() {
   if (keys["d"]) obj.x += speed;
 }
 
+// CAMERA FOLLOW (CINEMATIC)
+function updateCamera() {
+  camera.x += (player.x - camera.x - canvas.width / 2) * 0.07;
+  camera.y += (player.y - camera.y - canvas.height / 2) * 0.07;
+}
+
 // SHOOT
-document.getElementById("attack").onclick = () => {
+document.getElementById("shoot").onclick = function () {
   bullets.push({ x: player.x, y: player.y, speed: 10 });
   wanted++;
   updateUI();
 };
 
 // CAR TOGGLE
-document.getElementById("car").onclick = () => {
+document.getElementById("car").onclick = function () {
   inCar = !inCar;
 };
 
-// POLICE AI (CHASE)
+// MISSION SYSTEM (STORY)
+document.getElementById("mission").onclick = function () {
+  if (chapter === 1) {
+    alert("Chapter 1: Eliminate target in Istanbul streets");
+  }
+
+  if (enemy.alive === false && chapter === 1) {
+    chapter = 2;
+    money += 500;
+    alert("Chapter 1 Complete → Chapter 2 Unlocked");
+    updateUI();
+  }
+};
+
+// AI
+function enemyAI() {
+  if (!enemy.alive) return;
+  enemy.x += (player.x - enemy.x) * 0.01;
+  enemy.y += (player.y - enemy.y) * 0.01;
+}
+
 function policeAI() {
   if (wanted > 0) {
-    if (policeCars.length < 2) {
-      policeCars.push({x:600,y:100});
-    }
-
-    policeCars.forEach(p => {
-      if (p.x < player.x) p.x += 2;
-      if (p.x > player.x) p.x -= 2;
-      if (p.y < player.y) p.y += 2;
-      if (p.y > player.y) p.y -= 2;
-    });
+    police.x += (player.x - police.x) * 0.02;
+    police.y += (player.y - police.y) * 0.02;
   }
 }
 
@@ -79,76 +92,64 @@ function policeAI() {
 function updateBullets() {
   bullets.forEach(b => {
     b.x += b.speed;
+
+    if (enemy.alive &&
+        b.x < enemy.x + 20 &&
+        b.x > enemy.x &&
+        b.y < enemy.y + 20 &&
+        b.y > enemy.y) {
+
+      enemy.alive = false;
+      money += 100;
+      updateUI();
+    }
   });
-}
-
-// NPC MOVEMENT
-function moveNPCs() {
-  npcs.forEach(n => {
-    n.x += (Math.random()-0.5)*2;
-    n.y += (Math.random()-0.5)*2;
-  });
-}
-
-// DRAW CITY GRID (ISTANBUL STYLE)
-function drawCity() {
-  ctx.fillStyle = "#111";
-  ctx.fillRect(0,0,canvas.width,canvas.height);
-
-  ctx.strokeStyle = "#222";
-
-  for (let i=0;i<20;i++){
-    ctx.beginPath();
-    ctx.moveTo(i*80,0);
-    ctx.lineTo(i*80,canvas.height);
-    ctx.stroke();
-
-    ctx.beginPath();
-    ctx.moveTo(0,i*80);
-    ctx.lineTo(canvas.width,i*80);
-    ctx.stroke();
-  }
-}
-
-// DRAW EVERYTHING
-function draw() {
-  drawCity();
-
-  // PLAYER / CAR
-  ctx.fillStyle = inCar ? "yellow" : "blue";
-  let obj = inCar ? car : player;
-  ctx.fillRect(obj.x,obj.y,obj.size,obj.size);
-
-  // NPCS
-  ctx.fillStyle = "green";
-  npcs.forEach(n => ctx.fillRect(n.x,n.y,10,10));
-
-  // TRAFFIC
-  ctx.fillStyle = "gray";
-  traffic.forEach(t => ctx.fillRect(t.x,t.y,15,15));
-
-  // POLICE
-  ctx.fillStyle = "white";
-  policeCars.forEach(p => ctx.fillRect(p.x,p.y,20,20));
-
-  // BULLETS
-  ctx.fillStyle = "orange";
-  bullets.forEach(b => ctx.fillRect(b.x,b.y,5,5));
 }
 
 // UI
 function updateUI() {
   document.getElementById("money").innerText = money;
   document.getElementById("wanted").innerText = wanted;
+  document.getElementById("chapter").innerText = chapter;
+}
+
+// DRAW WORLD
+function draw() {
+  ctx.fillStyle = "#0a0a12";
+  ctx.fillRect(0,0,canvas.width,canvas.height);
+
+  // PLAYER
+  ctx.fillStyle = "cyan";
+  ctx.fillRect(player.x - camera.x, player.y - camera.y, 20, 20);
+
+  // ENEMY
+  if (enemy.alive) {
+    ctx.fillStyle = "red";
+    ctx.fillRect(enemy.x - camera.x, enemy.y - camera.y, 20, 20);
+  }
+
+  // POLICE
+  ctx.fillStyle = "white";
+  ctx.fillRect(police.x - camera.x, police.y - camera.y, 20, 20);
+
+  // BULLETS
+  ctx.fillStyle = "orange";
+  bullets.forEach(b => {
+    ctx.fillRect(b.x - camera.x, b.y - camera.y, 5, 5);
+  });
 }
 
 // LOOP
 function update() {
   move();
-  moveNPCs();
+  updateCamera();
+
+  enemyAI();
   policeAI();
   updateBullets();
+
   draw();
+
   requestAnimationFrame(update);
 }
 
