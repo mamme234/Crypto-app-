@@ -92,4 +92,5 @@ app.post("/approve", async (req, res) => {
   res.json({ success: true });
 });
 
-app.listen(3000, () => console.log("🚀 Backend running on port 3000"));
+app.listen(3000, () => console.log("🚀 Server starting...");
+console.log("MONGO_URI =", process.env.MONGO_URI);
