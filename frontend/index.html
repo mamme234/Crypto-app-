@@ -1,53 +1,21 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ShadowDream Story</title>
-
-<style>
-body { margin:0; overflow:hidden; background:black; font-family:Arial; }
-
-canvas { display:block; }
-
-#ui {
-  position:absolute;
-  top:10px;
-  left:10px;
-  color:white;
-  z-index:10;
-  font-size:14px;
-}
-
-.btn {
-  position:absolute;
-  bottom:20px;
-  padding:12px;
-  font-size:14px;
-  border:none;
-  background:#222;
-  color:white;
-}
-
-#shoot { right:20px; }
-#car { left:20px; }
-#mission { left:50%; transform:translateX(-50%); }
-</style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Mini GTA Web</title>
+<link rel="stylesheet" href="style.css">
 </head>
-
 <body>
 
 <div id="ui">
-💰 Money: <span id="money">0</span><br>
-🚨 Wanted: <span id="wanted">0</span><br>
-📖 Chapter: <span id="chapter">1</span>
+  <h2>Mini GTA Web</h2>
+  <p>WASD move • E enter/exit car</p>
 </div>
 
-<button class="btn" id="car">🚗 CAR</button>
-<button class="btn" id="shoot">🔫 SHOOT</button>
-<button class="btn" id="mission">📞 MISSION</button>
+<script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.160.0/examples/js/loaders/GLTFLoader.js"></script>
+<script src="main.js"></script>
 
-<canvas id="game"></canvas>
-
-<script src="game.js"></script>
 </body>
 </html>
