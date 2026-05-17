@@ -4,17 +4,44 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>Mini GTA Web</title>
-<link rel="stylesheet" href="style.css">
+
+<style>
+body {
+  margin: 0;
+  overflow: hidden;
+  font-family: Arial;
+  background: black;
+}
+
+canvas {
+  display: block;
+}
+
+#ui {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  color: white;
+  background: rgba(0,0,0,0.5);
+  padding: 10px;
+  border-radius: 10px;
+  z-index: 10;
+}
+</style>
 </head>
+
 <body>
 
+<!-- 🎮 HUD -->
 <div id="ui">
   <h2>Mini GTA Web</h2>
   <p>WASD move • E enter/exit car</p>
 </div>
 
+<!-- 🌍 Three.js Core -->
 <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.160.0/examples/js/loaders/GLTFLoader.js"></script>
+
+<!-- 🚗 Your Game Code -->
 <script src="main.js"></script>
 
 </body>
