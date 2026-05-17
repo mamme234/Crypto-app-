@@ -3,55 +3,31 @@ const mongoose = require("mongoose");
 const cors = require("cors");
 
 const app = express();
-
 app.use(cors());
 app.use(express.json());
 
-/* =========================
-   BASIC ROUTE (HEALTH CHECK)
-========================= */
-app.get("/", (req, res) => {
-  res.send("🚀 Car USDT Backend is Running");
-});
+console.log("🚀 TRIO backend starting...");
 
-/* =========================
-   ENV DEBUG (IMPORTANT)
-========================= */
-console.log("🚀 Server starting...");
-console.log("MONGO_URI =", process.env.MONGO_URI);
-
-/* =========================
-   PREVENT CRASH IF MISSING ENV
-========================= */
 if (!process.env.MONGO_URI) {
-  console.error("❌ MONGO_URI is NOT set in Render Environment Variables");
-  console.error("👉 Go to Render → Environment → Add MONGO_URI");
+  console.log("❌ MONGO_URI missing");
   process.exit(1);
 }
 
-/* =========================
-   MONGODB CONNECTION
-========================= */
 mongoose.connect(process.env.MONGO_URI)
-  .then(() => console.log("✅ MongoDB connected"))
-  .catch((err) => {
-    console.error("❌ MongoDB connection failed:", err.message);
+  .then(()=>console.log("✅ MongoDB connected"))
+  .catch(err=>{
+    console.log("❌ DB error:", err.message);
     process.exit(1);
   });
 
-/* =========================
-   USER MODEL
-========================= */
+/* ================= USER ================= */
 const User = mongoose.model("User", {
   tgId: String,
   username: String,
-  photo: String,
   usdt: { type: Number, default: 0 }
 });
 
-/* =========================
-   WITHDRAW MODEL
-========================= */
+/* ================= WITHDRAW ================= */
 const Withdraw = mongoose.model("Withdraw", {
   tgId: String,
   username: String,
@@ -59,107 +35,68 @@ const Withdraw = mongoose.model("Withdraw", {
   status: { type: String, default: "pending" }
 });
 
-/* =========================
-   CREATE / LOGIN USER
-========================= */
-app.post("/user", async (req, res) => {
-  try {
-    const { tgId, username, photo } = req.body;
+/* ================= LOGIN (Telegram) ================= */
+app.post("/auth", async (req,res)=>{
+  let { tgId, username } = req.body;
 
-    let user = await User.findOne({ tgId });
+  let user = await User.findOne({ tgId });
 
-    if (!user) {
-      user = await User.create({ tgId, username, photo });
-    }
-
-    res.json(user);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
+  if(!user){
+    user = await User.create({ tgId, username });
   }
+
+  res.json(user);
 });
 
-/* =========================
-   ADD USDT (GAME REWARD)
-========================= */
-app.post("/add-usdt", async (req, res) => {
-  try {
-    const { tgId, amount } = req.body;
+/* ================= ADD USDT ================= */
+app.post("/add-usdt", async (req,res)=>{
+  let { tgId, amount } = req.body;
 
-    await User.updateOne(
-      { tgId },
-      { $inc: { usdt: amount } }
-    );
+  await User.updateOne(
+    { tgId },
+    { $inc: { usdt: amount } }
+  );
 
-    res.json({ success: true });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+  res.json({ success:true });
 });
 
-/* =========================
-   WITHDRAW REQUEST
-========================= */
-app.post("/withdraw", async (req, res) => {
-  try {
-    const { tgId, amount } = req.body;
+/* ================= WITHDRAW REQUEST ================= */
+app.post("/withdraw", async (req,res)=>{
+  let { tgId, amount } = req.body;
 
-    const user = await User.findOne({ tgId });
+  const user = await User.findOne({ tgId });
 
-    if (!user) return res.json({ error: "User not found" });
+  if(!user) return res.json({ error:"User not found" });
 
-    if (user.usdt < amount) {
-      return res.json({ error: "Not enough balance" });
-    }
+  if(user.usdt < amount) return res.json({ error:"Not enough balance" });
 
-    await Withdraw.create({
-      tgId,
-      username: user.username,
-      amount
-    });
+  await Withdraw.create({
+    tgId,
+    username: user.username,
+    amount
+  });
 
-    res.json({ success: true });
-
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+  res.json({ success:true });
 });
 
-/* =========================
-   GET WITHDRAW REQUESTS (ADMIN)
-========================= */
-app.get("/withdraws", async (req, res) => {
-  try {
-    const data = await Withdraw.find().sort({ _id: -1 });
-    res.json(data);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+/* ================= ADMIN: GET WITHDRAWALS ================= */
+app.get("/withdraws", async (req,res)=>{
+  const data = await Withdraw.find().sort({_id:-1});
+  res.json(data);
 });
 
-/* =========================
-   APPROVE WITHDRAW
-========================= */
-app.post("/approve", async (req, res) => {
-  try {
-    const w = await Withdraw.findById(req.body.id);
+/* ================= ADMIN: APPROVE ================= */
+app.post("/approve", async (req,res)=>{
+  let w = await Withdraw.findById(req.body.id);
 
-    if (!w) return res.json({ error: "Not found" });
+  if(!w) return res.json({ error:"Not found" });
 
-    w.status = "approved";
-    await w.save();
+  w.status = "approved";
+  await w.save();
 
-    res.json({ success: true });
-
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+  res.json({ success:true });
 });
 
-/* =========================
-   START SERVER
-========================= */
-const PORT = process.env.PORT || 3000;
-
-app.listen(PORT, () => {
-  console.log("🚀 Server running on port", PORT);
+app.listen(process.env.PORT || 3000, ()=>{
+  console.log("🚀 TRIO backend running");
 });
