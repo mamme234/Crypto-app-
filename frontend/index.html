@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ShadowDream Ultimate</title>
+
+<style>
+body { margin:0; overflow:hidden; background:black; }
+
+canvas { display:block; }
+
+#ui {
+  position:absolute;
+  top:10px;
+  left:10px;
+  color:white;
+  font-family:Arial;
+  z-index:10;
+}
+
+.btn {
+  position:absolute;
+  bottom:20px;
+  padding:15px;
+  font-size:16px;
+}
+
+#attack { right:20px; }
+#car { left:20px; }
+</style>
+</head>
+
+<body>
+
+<div id="ui">
+💰 Money: <span id="money">0</span><br>
+🚨 Wanted: <span id="wanted">0</span>
+</div>
+
+<button class="btn" id="car">🚗</button>
+<button class="btn" id="attack">🔫</button>
+
+<canvas id="game"></canvas>
+
+<script src="game.js"></script>
+</body>
+</html>
