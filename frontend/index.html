@@ -1,51 +1,22 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Mini GTA Web</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Car USDT Mini App</title>
 
 <style>
-body {
-  margin: 0;
-  overflow: hidden;
-  font-family: Arial;
-}
-
-canvas { display: block; }
+body { margin:0; overflow:hidden; font-family:Arial; }
 
 #ui {
-  position: absolute;
-  top: 10px;
-  left: 10px;
-  color: white;
-  background: rgba(0,0,0,0.5);
-  padding: 10px;
-  border-radius: 10px;
-  z-index: 10;
-}
-
-/* 📱 MOBILE CONTROLS */
-#controls {
-  position: absolute;
-  bottom: 20px;
-  width: 100%;
-  display: flex;
-  justify-content: space-between;
-  padding: 0 20px;
-  z-index: 10;
-}
-
-.btn {
-  width: 70px;
-  height: 70px;
-  background: rgba(255,255,255,0.2);
-  color: white;
-  border-radius: 50%;
-  text-align: center;
-  line-height: 70px;
-  font-size: 18px;
-  user-select: none;
+  position:absolute;
+  top:10px;
+  left:10px;
+  color:white;
+  background:rgba(0,0,0,0.6);
+  padding:10px;
+  border-radius:10px;
+  z-index:10;
 }
 </style>
 </head>
@@ -53,27 +24,127 @@ canvas { display: block; }
 <body>
 
 <div id="ui">
-  <h3>Mini GTA Web</h3>
-  <p>Move + Drive + Mobile</p>
-</div>
-
-<!-- mobile buttons -->
-<div id="controls">
-  <div>
-    <div class="btn" id="left">◀</div>
-    <div class="btn" id="right">▶</div>
-  </div>
-
-  <div>
-    <div class="btn" id="up">▲</div>
-    <div class="btn" id="down">▼</div>
-  </div>
+💰 USDT: <span id="usdt">0</span><br>
+🏁 Level: <span id="level">1</span>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.160.0/examples/js/loaders/GLTFLoader.js"></script>
 
-<script src="main.js"></script>
+<script>
+let scene, camera, renderer;
+
+let car;
+let obstacles = [];
+
+let speed = 0.2;
+let usdt = 0;
+let level = 1;
+
+init();
+animate();
+
+function init(){
+
+  scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x87ceeb);
+
+  camera = new THREE.PerspectiveCamera(75, innerWidth/innerHeight, 0.1, 1000);
+
+  renderer = new THREE.WebGLRenderer();
+  renderer.setSize(innerWidth, innerHeight);
+  document.body.appendChild(renderer.domElement);
+
+  // 🛣️ ROAD
+  const road = new THREE.Mesh(
+    new THREE.PlaneGeometry(10,500),
+    new THREE.MeshStandardMaterial({ color:0x222222 })
+  );
+  road.rotation.x = -Math.PI/2;
+  scene.add(road);
+
+  // 🚗 CAR
+  car = new THREE.Mesh(
+    new THREE.BoxGeometry(1.5,0.5,3),
+    new THREE.MeshStandardMaterial({ color:0xff0000 })
+  );
+  car.position.y = 0.5;
+  scene.add(car);
+
+  spawnObstacles();
+
+  scene.add(new THREE.AmbientLight(0xffffff,0.7));
+
+  document.addEventListener("keydown",(e)=>{
+    if(e.key=="a") car.position.x -= 0.2;
+    if(e.key=="d") car.position.x += 0.2;
+  });
+}
+
+function spawnObstacles(){
+  for(let i=0;i<20;i++){
+    let o = new THREE.Mesh(
+      new THREE.BoxGeometry(1,1,1),
+      new THREE.MeshStandardMaterial({ color:0xffa500 })
+    );
+
+    o.position.x = (Math.random()>0.5?1:-1)*2;
+    o.position.z = -i*15;
+
+    scene.add(o);
+    obstacles.push(o);
+  }
+}
+
+function update(){
+
+  car.position.z -= speed;
+
+  camera.position.set(car.position.x,5,car.position.z+8);
+  camera.lookAt(car.position);
+
+  for(let o of obstacles){
+    o.position.z += speed;
+
+    if(distance(car,o)<1.2){
+      alert("💥 Game Over");
+      location.reload();
+    }
+
+    if(o.position.z > car.position.z + 5){
+      o.position.z = car.position.z - 200;
+
+      usdt += 0.03;
+      level++;
+
+      document.getElementById("usdt").innerText = usdt.toFixed(2);
+      document.getElementById("level").innerText = level;
+
+      // 🔗 SEND TO BACKEND
+      fetch("https://YOUR-BACKEND.com/add-usdt", {
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body: JSON.stringify({
+          tgId: "demo",
+          amount: 0.03
+        })
+      });
+    }
+  }
+}
+
+function distance(a,b){
+  return Math.hypot(
+    a.position.x-b.position.x,
+    a.position.z-b.position.z
+  );
+}
+
+function animate(){
+  requestAnimationFrame(animate);
+  update();
+  renderer.render(scene,camera);
+}
+</script>
 
 </body>
 </html>
