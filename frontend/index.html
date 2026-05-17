@@ -2,10 +2,10 @@
 <html>
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ShadowDream Ultimate</title>
+<title>ShadowDream Story</title>
 
 <style>
-body { margin:0; overflow:hidden; background:black; }
+body { margin:0; overflow:hidden; background:black; font-family:Arial; }
 
 canvas { display:block; }
 
@@ -14,19 +14,23 @@ canvas { display:block; }
   top:10px;
   left:10px;
   color:white;
-  font-family:Arial;
   z-index:10;
+  font-size:14px;
 }
 
 .btn {
   position:absolute;
   bottom:20px;
-  padding:15px;
-  font-size:16px;
+  padding:12px;
+  font-size:14px;
+  border:none;
+  background:#222;
+  color:white;
 }
 
-#attack { right:20px; }
+#shoot { right:20px; }
 #car { left:20px; }
+#mission { left:50%; transform:translateX(-50%); }
 </style>
 </head>
 
@@ -34,11 +38,13 @@ canvas { display:block; }
 
 <div id="ui">
 💰 Money: <span id="money">0</span><br>
-🚨 Wanted: <span id="wanted">0</span>
+🚨 Wanted: <span id="wanted">0</span><br>
+📖 Chapter: <span id="chapter">1</span>
 </div>
 
-<button class="btn" id="car">🚗</button>
-<button class="btn" id="attack">🔫</button>
+<button class="btn" id="car">🚗 CAR</button>
+<button class="btn" id="shoot">🔫 SHOOT</button>
+<button class="btn" id="mission">📞 MISSION</button>
 
 <canvas id="game"></canvas>
 
