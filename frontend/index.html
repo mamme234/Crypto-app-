@@ -2,14 +2,14 @@
 <html>
 <head>
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>GTA Mini Car Game</title>
+<title>TRIO Car Game</title>
 
 <style>
 body{
   margin:0;
   overflow:hidden;
-  background:linear-gradient(#111,#000);
   font-family:Arial;
+  background:#0d0d0d;
 }
 
 #ui{
@@ -24,7 +24,7 @@ body{
 
 #controls{
   position:absolute;
-  bottom:25px;
+  bottom:20px;
   width:100%;
   display:flex;
   justify-content:space-between;
@@ -32,14 +32,14 @@ body{
 }
 
 .btn{
-  width:85px;
-  height:85px;
+  width:80px;
+  height:80px;
   border-radius:50%;
   background:rgba(255,255,255,0.15);
   color:white;
   font-size:22px;
   text-align:center;
-  line-height:85px;
+  line-height:80px;
 }
 </style>
 </head>
@@ -48,7 +48,7 @@ body{
 
 <div id="ui">
 💰 USDT: <span id="usdt">0</span><br>
-🏆 Level: <span id="level">1</span>
+🏁 Level: <span id="level">1</span>
 </div>
 
 <div id="controls">
@@ -60,20 +60,20 @@ body{
 
 <script>
 let scene = new THREE.Scene();
-scene.fog = new THREE.Fog(0x000000, 10, 90);
+scene.fog = new THREE.Fog(0x000000, 10, 80);
 
 let camera = new THREE.PerspectiveCamera(75, innerWidth/innerHeight, 0.1, 1000);
 
-let renderer = new THREE.WebGLRenderer({ antialias:true });
+let renderer = new THREE.WebGLRenderer({antialias:true});
 renderer.setSize(innerWidth, innerHeight);
 document.body.appendChild(renderer.domElement);
 
-/* ================= LIGHT ================= */
+/* LIGHT */
 const light = new THREE.DirectionalLight(0xffffff, 1);
 light.position.set(5,10,5);
 scene.add(light);
 
-/* ================= ROAD (GTA STYLE) ================= */
+/* ROAD */
 const road = new THREE.Mesh(
   new THREE.PlaneGeometry(12,300),
   new THREE.MeshStandardMaterial({ color:0x1a1a1a })
@@ -81,51 +81,33 @@ const road = new THREE.Mesh(
 road.rotation.x = -Math.PI/2;
 scene.add(road);
 
-/* ================= CAR (NO BOX FEEL) ================= */
-const car = new THREE.Group();
-
-const body = new THREE.Mesh(
+/* CAR */
+const car = new THREE.Mesh(
   new THREE.BoxGeometry(1.5,0.5,3),
   new THREE.MeshStandardMaterial({ color:0xff0000 })
 );
-
-const top = new THREE.Mesh(
-  new THREE.BoxGeometry(1,0.5,1.5),
-  new THREE.MeshStandardMaterial({ color:0xaa0000 })
-);
-
-top.position.y = 0.5;
-car.add(body);
-car.add(top);
-
 car.position.y = 0.5;
 scene.add(car);
 
-/* ================= OBSTACLES ================= */
+/* OBSTACLES */
 let obstacles = [];
-
-function spawnObstacle(z){
+for(let i=0;i<12;i++){
   const o = new THREE.Mesh(
     new THREE.BoxGeometry(1,1,1),
     new THREE.MeshStandardMaterial({ color:0xffcc00 })
   );
-
-  o.position.set((Math.random()>0.5?2:-2),0.5,z);
+  o.position.set((Math.random()>0.5?2:-2),0.5,-i*25);
   scene.add(o);
   obstacles.push(o);
 }
 
-for(let i=0;i<15;i++){
-  spawnObstacle(-i*20);
-}
-
-/* ================= GAME DATA ================= */
+/* GAME DATA */
 let move = 0;
 let usdt = 0;
 let level = 1;
 let speed = 0.35;
 
-/* ================= CONTROLS ================= */
+/* CONTROLS */
 document.getElementById("left").ontouchstart =
 document.getElementById("left").onmousedown = ()=> move = -0.25;
 
@@ -137,7 +119,7 @@ document.getElementById("right").ontouchend =
 document.getElementById("left").onmouseup =
 document.getElementById("right").onmouseup = ()=> move = 0;
 
-/* ================= LOOP ================= */
+/* LOOP */
 function animate(){
   requestAnimationFrame(animate);
 
@@ -156,7 +138,6 @@ function animate(){
       usdt += 0.03;
       document.getElementById("usdt").innerText = usdt.toFixed(2);
 
-      /* LEVEL SYSTEM */
       if(usdt > level * 2){
         level++;
         document.getElementById("level").innerText = level;
@@ -168,7 +149,6 @@ function animate(){
         });
       }
 
-      /* SEND USDT */
       fetch("https://esref-ruya.onrender.com/add-usdt",{
         method:"POST",
         headers:{ "Content-Type":"application/json" },
