@@ -1,14 +1,18 @@
 <!DOCTYPE html>
 <html>
 <head>
-<meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>Car USDT Mini App</title>
+<title>GTA Mini Car Game</title>
 
 <style>
-body { margin:0; overflow:hidden; font-family:Arial; }
+body{
+  margin:0;
+  overflow:hidden;
+  background:linear-gradient(#111,#000);
+  font-family:Arial;
+}
 
-#ui {
+#ui{
   position:absolute;
   top:10px;
   left:10px;
@@ -16,7 +20,26 @@ body { margin:0; overflow:hidden; font-family:Arial; }
   background:rgba(0,0,0,0.6);
   padding:10px;
   border-radius:10px;
-  z-index:10;
+}
+
+#controls{
+  position:absolute;
+  bottom:25px;
+  width:100%;
+  display:flex;
+  justify-content:space-between;
+  padding:0 40px;
+}
+
+.btn{
+  width:85px;
+  height:85px;
+  border-radius:50%;
+  background:rgba(255,255,255,0.15);
+  color:white;
+  font-size:22px;
+  text-align:center;
+  line-height:85px;
 }
 </style>
 </head>
@@ -25,125 +48,142 @@ body { margin:0; overflow:hidden; font-family:Arial; }
 
 <div id="ui">
 💰 USDT: <span id="usdt">0</span><br>
-🏁 Level: <span id="level">1</span>
+🏆 Level: <span id="level">1</span>
+</div>
+
+<div id="controls">
+  <div class="btn" id="left">◀</div>
+  <div class="btn" id="right">▶</div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
 
 <script>
-let scene, camera, renderer;
+let scene = new THREE.Scene();
+scene.fog = new THREE.Fog(0x000000, 10, 90);
 
-let car;
+let camera = new THREE.PerspectiveCamera(75, innerWidth/innerHeight, 0.1, 1000);
+
+let renderer = new THREE.WebGLRenderer({ antialias:true });
+renderer.setSize(innerWidth, innerHeight);
+document.body.appendChild(renderer.domElement);
+
+/* ================= LIGHT ================= */
+const light = new THREE.DirectionalLight(0xffffff, 1);
+light.position.set(5,10,5);
+scene.add(light);
+
+/* ================= ROAD (GTA STYLE) ================= */
+const road = new THREE.Mesh(
+  new THREE.PlaneGeometry(12,300),
+  new THREE.MeshStandardMaterial({ color:0x1a1a1a })
+);
+road.rotation.x = -Math.PI/2;
+scene.add(road);
+
+/* ================= CAR (NO BOX FEEL) ================= */
+const car = new THREE.Group();
+
+const body = new THREE.Mesh(
+  new THREE.BoxGeometry(1.5,0.5,3),
+  new THREE.MeshStandardMaterial({ color:0xff0000 })
+);
+
+const top = new THREE.Mesh(
+  new THREE.BoxGeometry(1,0.5,1.5),
+  new THREE.MeshStandardMaterial({ color:0xaa0000 })
+);
+
+top.position.y = 0.5;
+car.add(body);
+car.add(top);
+
+car.position.y = 0.5;
+scene.add(car);
+
+/* ================= OBSTACLES ================= */
 let obstacles = [];
 
-let speed = 0.2;
+function spawnObstacle(z){
+  const o = new THREE.Mesh(
+    new THREE.BoxGeometry(1,1,1),
+    new THREE.MeshStandardMaterial({ color:0xffcc00 })
+  );
+
+  o.position.set((Math.random()>0.5?2:-2),0.5,z);
+  scene.add(o);
+  obstacles.push(o);
+}
+
+for(let i=0;i<15;i++){
+  spawnObstacle(-i*20);
+}
+
+/* ================= GAME DATA ================= */
+let move = 0;
 let usdt = 0;
 let level = 1;
+let speed = 0.35;
 
-init();
-animate();
+/* ================= CONTROLS ================= */
+document.getElementById("left").ontouchstart =
+document.getElementById("left").onmousedown = ()=> move = -0.25;
 
-function init(){
+document.getElementById("right").ontouchstart =
+document.getElementById("right").onmousedown = ()=> move = 0.25;
 
-  scene = new THREE.Scene();
-  scene.background = new THREE.Color(0x87ceeb);
+document.getElementById("left").ontouchend =
+document.getElementById("right").ontouchend =
+document.getElementById("left").onmouseup =
+document.getElementById("right").onmouseup = ()=> move = 0;
 
-  camera = new THREE.PerspectiveCamera(75, innerWidth/innerHeight, 0.1, 1000);
+/* ================= LOOP ================= */
+function animate(){
+  requestAnimationFrame(animate);
 
-  renderer = new THREE.WebGLRenderer();
-  renderer.setSize(innerWidth, innerHeight);
-  document.body.appendChild(renderer.domElement);
-
-  // 🛣️ ROAD
-  const road = new THREE.Mesh(
-    new THREE.PlaneGeometry(10,500),
-    new THREE.MeshStandardMaterial({ color:0x222222 })
-  );
-  road.rotation.x = -Math.PI/2;
-  scene.add(road);
-
-  // 🚗 CAR
-  car = new THREE.Mesh(
-    new THREE.BoxGeometry(1.5,0.5,3),
-    new THREE.MeshStandardMaterial({ color:0xff0000 })
-  );
-  car.position.y = 0.5;
-  scene.add(car);
-
-  spawnObstacles();
-
-  scene.add(new THREE.AmbientLight(0xffffff,0.7));
-
-  document.addEventListener("keydown",(e)=>{
-    if(e.key=="a") car.position.x -= 0.2;
-    if(e.key=="d") car.position.x += 0.2;
-  });
-}
-
-function spawnObstacles(){
-  for(let i=0;i<20;i++){
-    let o = new THREE.Mesh(
-      new THREE.BoxGeometry(1,1,1),
-      new THREE.MeshStandardMaterial({ color:0xffa500 })
-    );
-
-    o.position.x = (Math.random()>0.5?1:-1)*2;
-    o.position.z = -i*15;
-
-    scene.add(o);
-    obstacles.push(o);
-  }
-}
-
-function update(){
-
+  car.position.x += move;
   car.position.z -= speed;
 
-  camera.position.set(car.position.x,5,car.position.z+8);
+  camera.position.set(car.position.x,5,car.position.z+12);
   camera.lookAt(car.position);
 
-  for(let o of obstacles){
+  obstacles.forEach(o=>{
     o.position.z += speed;
-
-    if(distance(car,o)<1.2){
-      alert("💥 Game Over");
-      location.reload();
-    }
 
     if(o.position.z > car.position.z + 5){
       o.position.z = car.position.z - 200;
 
       usdt += 0.03;
-      level++;
-
       document.getElementById("usdt").innerText = usdt.toFixed(2);
-      document.getElementById("level").innerText = level;
 
-      // 🔗 SEND TO BACKEND
-      fetch("https://YOUR-BACKEND.com/add-usdt", {
+      /* LEVEL SYSTEM */
+      if(usdt > level * 2){
+        level++;
+        document.getElementById("level").innerText = level;
+
+        fetch("https://esref-ruya.onrender.com/level-up",{
+          method:"POST",
+          headers:{ "Content-Type":"application/json" },
+          body: JSON.stringify({ tgId:"demo" })
+        });
+      }
+
+      /* SEND USDT */
+      fetch("https://esref-ruya.onrender.com/add-usdt",{
         method:"POST",
-        headers:{"Content-Type":"application/json"},
+        headers:{ "Content-Type":"application/json" },
         body: JSON.stringify({
-          tgId: "demo",
-          amount: 0.03
+          tgId:"demo",
+          amount:0.03
         })
       });
     }
-  }
-}
+  });
 
-function distance(a,b){
-  return Math.hypot(
-    a.position.x-b.position.x,
-    a.position.z-b.position.z
-  );
-}
-
-function animate(){
-  requestAnimationFrame(animate);
-  update();
   renderer.render(scene,camera);
 }
+
+animate();
 </script>
 
 </body>
