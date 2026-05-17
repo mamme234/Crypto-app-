@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+
+<meta
+name="viewport"
+content="width=device-width, initial-scale=1.0"
+/>
+
+<title>Shadow Dream</title>
+
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+
+<style>
+
+body{
+  margin:0;
+  font-family:Arial;
+  background:#0f1115;
+  color:white;
+}
+
+.hero{
+  height:100vh;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  align-items:center;
+  background:#111;
+  text-align:center;
+  padding:20px;
+}
+
+.hero h1{
+  font-size:50px;
+  color:#ffcc00;
+}
+
+.hero p{
+  font-size:18px;
+}
+
+button{
+  background:#ffcc00;
+  color:black;
+  border:none;
+  padding:15px 20px;
+  border-radius:15px;
+  font-size:16px;
+  font-weight:bold;
+  margin-top:10px;
+}
+
+.hidden{
+  display:none;
+}
+
+.game{
+  padding:20px;
+}
+
+.topbar{
+  text-align:center;
+}
+
+.stats{
+  display:grid;
+  grid-template-columns:1fr 1fr 1fr;
+  gap:10px;
+  margin-top:20px;
+}
+
+.card{
+  background:#1b1f27;
+  padding:15px;
+  border-radius:15px;
+  text-align:center;
+}
+
+.storyBox{
+  background:#1b1f27;
+  padding:20px;
+  border-radius:15px;
+  margin-top:20px;
+}
+
+.missions{
+  display:flex;
+  flex-direction:column;
+  margin-top:20px;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="hero">
+
+<h1>SHADOW DREAM</h1>
+
+<p>
+The city remembers everything.
+</p>
+
+<button onclick="openGame()">
+ENTER THE CITY
+</button>
+
+</div>
+
+<div class="game hidden" id="game">
+
+<div class="topbar">
+
+<h2 id="username">
+Player
+</h2>
+
+</div>
+
+<div class="stats">
+
+<div class="card">
+<h3>💰 Money</h3>
+<p id="money">0</p>
+</div>
+
+<div class="card">
+<h3>⭐ Reputation</h3>
+<p id="rep">1</p>
+</div>
+
+<div class="card">
+<h3>❤️ Energy</h3>
+<p id="energy">100</p>
+</div>
+
+</div>
+
+<div class="storyBox">
+
+<h2>Episode 1</h2>
+
+<p id="storyText">
+Rain covered the streets.
+Aras returned after five years.
+</p>
+
+</div>
+
+<div class="missions">
+
+<button onclick="doMission('street')">
+Street Deal
+</button>
+
+<button onclick="doMission('fight')">
+Night Fight
+</button>
+
+<button onclick="doMission('boss')">
+Boss Mission
+</button>
+
+</div>
+
+</div>
+
+<script>
+
+const tg = window.Telegram.WebApp;
+
+tg.expand();
+
+tg.ready();
+
+const user = tg.initDataUnsafe.user;
+
+if(user){
+
+document.getElementById(
+"username"
+).innerText =
+user.first_name;
+
+}
+
+let money =
+localStorage.getItem("money")
+? parseInt(localStorage.getItem("money"))
+: 0;
+
+let reputation =
+localStorage.getItem("rep")
+? parseInt(localStorage.getItem("rep"))
+: 1;
+
+let energy =
+localStorage.getItem("energy")
+? parseInt(localStorage.getItem("energy"))
+: 100;
+
+function openGame(){
+
+document.querySelector(
+".hero"
+).style.display = "none";
+
+document.getElementById(
+"game"
+).classList.remove("hidden");
+
+}
+
+function updateUI(){
+
+document.getElementById(
+"money"
+).innerText = money;
+
+document.getElementById(
+"rep"
+).innerText = reputation;
+
+document.getElementById(
+"energy"
+).innerText = energy;
+
+localStorage.setItem(
+"money",
+money
+);
+
+localStorage.setItem(
+"rep",
+reputation
+);
+
+localStorage.setItem(
+"energy",
+energy
+);
+
+}
+
+function doMission(type){
+
+if(energy <= 0){
+
+document.getElementById(
+"storyText"
+).innerText =
+"You are too tired.";
+
+return;
+}
+
+if(type === "street"){
+
+money += 100;
+
+reputation += 1;
+
+energy -= 10;
+
+document.getElementById(
+"storyText"
+).innerText =
+"You completed a street deal.";
+}
+
+if(type === "fight"){
+
+money += 250;
+
+reputation += 3;
+
+energy -= 20;
+
+document.getElementById(
+"storyText"
+).innerText =
+"You survived a dangerous fight.";
+}
+
+if(type === "boss"){
+
+money += 600;
+
+reputation += 6;
+
+energy -= 35;
+
+document.getElementById(
+"storyText"
+).innerText =
+"Demir trusted you with a mafia mission.";
+}
+
+updateUI();
+
+}
+
+setInterval(()=>{
+
+if(energy < 100){
+
+energy += 1;
+
+updateUI();
+
+}
+
+},5000);
+
+updateUI();
+
+</script>
+
+</body>
+</html>
