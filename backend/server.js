@@ -7,33 +7,41 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-/* =======================
-   ENV CHECK (IMPORTANT)
-======================= */
-console.log("🚀 Starting backend...");
+/* =========================
+   BASIC ROUTE (HEALTH CHECK)
+========================= */
+app.get("/", (req, res) => {
+  res.send("🚀 Car USDT Backend is Running");
+});
+
+/* =========================
+   ENV DEBUG (IMPORTANT)
+========================= */
+console.log("🚀 Server starting...");
 console.log("MONGO_URI =", process.env.MONGO_URI);
 
-/* =======================
-   SAFETY CHECK
-======================= */
+/* =========================
+   PREVENT CRASH IF MISSING ENV
+========================= */
 if (!process.env.MONGO_URI) {
-  console.error("❌ ERROR: MONGO_URI is missing in Render environment variables");
+  console.error("❌ MONGO_URI is NOT set in Render Environment Variables");
+  console.error("👉 Go to Render → Environment → Add MONGO_URI");
   process.exit(1);
 }
 
-/* =======================
-   CONNECT MONGODB
-======================= */
+/* =========================
+   MONGODB CONNECTION
+========================= */
 mongoose.connect(process.env.MONGO_URI)
-.then(() => console.log("✅ MongoDB connected"))
-.catch((err) => {
-  console.error("❌ MongoDB connection error:", err.message);
-  process.exit(1);
-});
+  .then(() => console.log("✅ MongoDB connected"))
+  .catch((err) => {
+    console.error("❌ MongoDB connection failed:", err.message);
+    process.exit(1);
+  });
 
-/* =======================
+/* =========================
    USER MODEL
-======================= */
+========================= */
 const User = mongoose.model("User", {
   tgId: String,
   username: String,
@@ -41,9 +49,9 @@ const User = mongoose.model("User", {
   usdt: { type: Number, default: 0 }
 });
 
-/* =======================
+/* =========================
    WITHDRAW MODEL
-======================= */
+========================= */
 const Withdraw = mongoose.model("Withdraw", {
   tgId: String,
   username: String,
@@ -51,13 +59,13 @@ const Withdraw = mongoose.model("Withdraw", {
   status: { type: String, default: "pending" }
 });
 
-/* =======================
+/* =========================
    CREATE / LOGIN USER
-======================= */
+========================= */
 app.post("/user", async (req, res) => {
-  const { tgId, username, photo } = req.body;
-
   try {
+    const { tgId, username, photo } = req.body;
+
     let user = await User.findOne({ tgId });
 
     if (!user) {
@@ -65,43 +73,39 @@ app.post("/user", async (req, res) => {
     }
 
     res.json(user);
-
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
-/* =======================
+/* =========================
    ADD USDT (GAME REWARD)
-======================= */
+========================= */
 app.post("/add-usdt", async (req, res) => {
-  const { tgId, amount } = req.body;
-
   try {
+    const { tgId, amount } = req.body;
+
     await User.updateOne(
       { tgId },
       { $inc: { usdt: amount } }
     );
 
     res.json({ success: true });
-
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
-/* =======================
+/* =========================
    WITHDRAW REQUEST
-======================= */
+========================= */
 app.post("/withdraw", async (req, res) => {
-  const { tgId, amount } = req.body;
-
   try {
+    const { tgId, amount } = req.body;
+
     const user = await User.findOne({ tgId });
 
-    if (!user) {
-      return res.json({ error: "User not found" });
-    }
+    if (!user) return res.json({ error: "User not found" });
 
     if (user.usdt < amount) {
       return res.json({ error: "Not enough balance" });
@@ -120,9 +124,9 @@ app.post("/withdraw", async (req, res) => {
   }
 });
 
-/* =======================
+/* =========================
    GET WITHDRAW REQUESTS (ADMIN)
-======================= */
+========================= */
 app.get("/withdraws", async (req, res) => {
   try {
     const data = await Withdraw.find().sort({ _id: -1 });
@@ -132,16 +136,14 @@ app.get("/withdraws", async (req, res) => {
   }
 });
 
-/* =======================
+/* =========================
    APPROVE WITHDRAW
-======================= */
+========================= */
 app.post("/approve", async (req, res) => {
   try {
     const w = await Withdraw.findById(req.body.id);
 
-    if (!w) {
-      return res.json({ error: "Not found" });
-    }
+    if (!w) return res.json({ error: "Not found" });
 
     w.status = "approved";
     await w.save();
@@ -153,16 +155,9 @@ app.post("/approve", async (req, res) => {
   }
 });
 
-/* =======================
-   HEALTH CHECK
-======================= */
-app.get("/", (req, res) => {
-  res.send("🚀 Car USDT Backend Running");
-});
-
-/* =======================
+/* =========================
    START SERVER
-======================= */
+========================= */
 const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, () => {
