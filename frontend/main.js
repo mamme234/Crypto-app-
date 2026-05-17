@@ -1,15 +1,13 @@
 let scene, camera, renderer;
 
-let player, car;
+let player = null;
+let car;
 let keys = {};
 let inCar = false;
 
-let playerMixer;
-
-// car physics
 let carSpeed = 0;
 const maxSpeed = 0.35;
-const acceleration = 0.012;
+const accel = 0.012;
 const turnSpeed = 0.03;
 
 init();
@@ -30,7 +28,7 @@ function init() {
   renderer.setSize(window.innerWidth, window.innerHeight);
   document.body.appendChild(renderer.domElement);
 
-  // 🌍 ground
+  // 🌍 Ground
   const ground = new THREE.Mesh(
     new THREE.PlaneGeometry(500, 500),
     new THREE.MeshStandardMaterial({ color: 0x2e8b57 })
@@ -38,10 +36,10 @@ function init() {
   ground.rotation.x = -Math.PI / 2;
   scene.add(ground);
 
-  // 🏙️ city
+  // 🏙️ Simple city buildings
   createCity();
 
-  // 🚗 car
+  // 🚗 Car
   car = new THREE.Mesh(
     new THREE.BoxGeometry(3, 1.5, 5),
     new THREE.MeshStandardMaterial({ color: 0x0000ff })
@@ -49,36 +47,25 @@ function init() {
   car.position.set(5, 0.75, 0);
   scene.add(car);
 
-  // 👤 player (real model)
-  const loader = new THREE.GLTFLoader();
-
-  loader.load(
-    "https://threejs.org/examples/models/gltf/RobotExpressive/RobotExpressive.glb",
-    (gltf) => {
-      player = gltf.scene;
-      player.scale.set(0.4, 0.4, 0.4);
-      player.position.set(0, 0, 5);
-      scene.add(player);
-
-      playerMixer = new THREE.AnimationMixer(player);
-
-      const idle = THREE.AnimationClip.findByName(gltf.animations, "Idle");
-      if (idle) playerMixer.clipAction(idle).play();
-    }
+  // 👤 Player (simple fallback cube so it NEVER breaks)
+  player = new THREE.Mesh(
+    new THREE.BoxGeometry(1, 2, 1),
+    new THREE.MeshStandardMaterial({ color: 0xff0000 })
   );
+  player.position.set(0, 1, 5);
+  scene.add(player);
 
-  // 💡 lights
-  const light = new THREE.DirectionalLight(0xffffff, 1.2);
-  light.position.set(20, 50, 20);
+  // 💡 Lights
+  scene.add(new THREE.AmbientLight(0xffffff, 0.5));
+
+  const light = new THREE.DirectionalLight(0xffffff, 1);
+  light.position.set(10, 20, 10);
   scene.add(light);
 
-  scene.add(new THREE.AmbientLight(0xffffff, 0.4));
-
-  // 🎮 controls
+  // 🎮 Controls
   window.addEventListener("keydown", (e) => keys[e.key.toLowerCase()] = true);
   window.addEventListener("keyup", (e) => keys[e.key.toLowerCase()] = false);
 
-  // resize
   window.addEventListener("resize", onResize);
 }
 
@@ -88,33 +75,34 @@ function onResize() {
   renderer.setSize(window.innerWidth, window.innerHeight);
 }
 
+// 🏙️ CITY
 function createCity() {
   const roadMat = new THREE.MeshStandardMaterial({ color: 0x333333 });
 
-  for (let i = -5; i <= 5; i++) {
+  for (let i = -4; i <= 4; i++) {
     const road1 = new THREE.Mesh(
       new THREE.BoxGeometry(500, 0.1, 10),
       roadMat
     );
-    road1.position.z = i * 30;
+    road1.position.z = i * 40;
     scene.add(road1);
 
     const road2 = new THREE.Mesh(
       new THREE.BoxGeometry(10, 0.1, 500),
       roadMat
     );
-    road2.position.x = i * 30;
+    road2.position.x = i * 40;
     scene.add(road2);
   }
 
   const buildingMat = new THREE.MeshStandardMaterial({ color: 0x888888 });
 
-  for (let i = 0; i < 100; i++) {
+  for (let i = 0; i < 80; i++) {
     const b = new THREE.Mesh(
       new THREE.BoxGeometry(
-        5 + Math.random() * 15,
+        5 + Math.random() * 10,
         10 + Math.random() * 50,
-        5 + Math.random() * 15
+        5 + Math.random() * 10
       ),
       buildingMat
     );
@@ -127,41 +115,27 @@ function createCity() {
   }
 }
 
-// 👤 movement
+// 👤 PLAYER MOVE
 function updatePlayer() {
   if (!player) return;
 
   let speed = 0.12;
   let moving = false;
 
-  if (keys["w"]) {
-    player.position.z -= speed;
-    moving = true;
-  }
-  if (keys["s"]) {
-    player.position.z += speed;
-    moving = true;
-  }
-  if (keys["a"]) {
-    player.position.x -= speed;
-    moving = true;
-  }
-  if (keys["d"]) {
-    player.position.x += speed;
-    moving = true;
-  }
+  if (keys["w"]) { player.position.z -= speed; moving = true; }
+  if (keys["s"]) { player.position.z += speed; moving = true; }
+  if (keys["a"]) { player.position.x -= speed; moving = true; }
+  if (keys["d"]) { player.position.x += speed; moving = true; }
 
   if (moving) player.rotation.y += 0.05;
 
-  followCamera(player.position);
-
-  if (playerMixer) playerMixer.update(0.016);
+  follow(player.position);
 }
 
-// 🚗 car movement
+// 🚗 CAR MOVE
 function updateCar() {
-  if (keys["w"]) carSpeed += acceleration;
-  if (keys["s"]) carSpeed -= acceleration;
+  if (keys["w"]) carSpeed += accel;
+  if (keys["s"]) carSpeed -= accel;
 
   carSpeed *= 0.98;
 
@@ -174,20 +148,20 @@ function updateCar() {
   car.position.x -= Math.sin(car.rotation.y) * carSpeed;
   car.position.z -= Math.cos(car.rotation.y) * carSpeed;
 
-  followCamera(car.position);
+  follow(car.position);
 }
 
-// 🎥 camera
-function followCamera(target) {
+// 🎥 CAMERA FOLLOW
+function follow(target) {
   camera.position.x = target.x;
   camera.position.z = target.z + 8;
   camera.position.y = 5;
   camera.lookAt(target);
 }
 
-// 🔁 enter/exit car
+// 🔁 ENTER / EXIT CAR
 window.addEventListener("keydown", (e) => {
-  if (e.key.toLowerCase() === "e" && player) {
+  if (e.key.toLowerCase() === "e") {
     let dist = player.position.distanceTo(car.position);
 
     if (!inCar && dist < 3) {
@@ -197,14 +171,14 @@ window.addEventListener("keydown", (e) => {
 
       player.position.set(
         car.position.x + 2,
-        0,
+        1,
         car.position.z + 2
       );
     }
   }
 });
 
-// 🔄 game loop
+// 🔄 LOOP
 function animate() {
   requestAnimationFrame(animate);
 
@@ -217,4 +191,4 @@ function animate() {
   }
 
   renderer.render(scene, camera);
-        }
+                                                  }
